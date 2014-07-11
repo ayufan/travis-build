@@ -3,6 +3,7 @@ module Travis
     class Run < RepoCommand
       description "executes a stage from the .travis.yml"
       on '-p', '--print', 'output stage instead of running it'
+      on '-s', '--slug', 'slug to use (will try to detect from current git clone)'
 
       def setup
         error "run command is not available on #{RUBY_VERSION}" if RUBY_VERSION < '1.9.3'
@@ -11,13 +12,18 @@ module Travis
       end
 
       def run(*stages)
-        stages << 'script' if stages.empty?
-        script = Travis::Build.script(data)
-        stages.each do |stage|
-          script.set('TRAVIS_STAGE', stage, :echo => false)
-          script.run_stage(stage.to_sym)
+        puts(data.to_s)
+        script = Travis::Build.script(data, logs: { build: true, state: false })
+        if stages.empty?
+          script = script.compile
+        else
+          stages.each do |stage|
+            script.set('TRAVIS_STAGE', stage, :echo => false)
+            script.run_stage(stage.to_sym)
+          end
+          script = script.sh.to_s
         end
-        source = File.read(__FILE__).split("\n__END__\n", 2)[1] + script.sh.to_s
+        source = File.read(__FILE__).split("\n__END__\n", 2)[1] + script
         print? ? puts(source) : run_script(source, *stages)
       end
 
@@ -35,7 +41,22 @@ module Travis
 
         def data
           {
-            :config => travis_config
+            :config => travis_config,
+            repository: {
+                source_url: `git config --get remote.origin.url`.strip!,
+            slug: `basename "$PWD"`.strip!
+          },
+            build: {
+                id: 1,
+                number: 1
+            },
+            job: {
+                id: 1,
+                number: '0.0',
+                branch: `git symbolic-ref --short HEAD`.strip!,
+                commit: `git rev-parse HEAD`.strip!,
+                pull_request: false
+            }
           }
         end
     end

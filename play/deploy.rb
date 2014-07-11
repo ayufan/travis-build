@@ -9,7 +9,8 @@ data = {
     state: 'http://localhost:3000/jobs/1/state', # not sure about this ...
   },
   repository: {
-    source_url: 'http://github.com/travis-ci/travis-support.git'
+    source_url: 'http://github.com/travis-ci/travis-support.git',
+    slug: 'test'
   },
   source: {
     id: 1,
