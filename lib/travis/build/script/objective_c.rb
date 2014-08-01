@@ -41,6 +41,7 @@ module Travis
 
           fold("start-simulator") do |sh|
             sh.echo "Starting iOS Simulator", ansi: :yellow
+            sh.cmd "killall \"iPhone Simulator\"", echo: false, assert: false
             sh.cmd "osascript -e 'set simpath to \"/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Applications/iPhone Simulator.app/Contents/MacOS/iPhone Simulator\" as POSIX file' -e 'tell application \"Finder\"' -e 'open simpath' -e 'end tell'"
           end
         end
