@@ -27,7 +27,8 @@ module Travis
         def export
           super
 
-          set 'TRAVIS_XCODE_SDK', config[:xcode_sdk].to_s.shellescape, echo: false
+          set 'TRAVIS_XCODE_SDK', xcode_sdk.shellescape, echo: false
+          set 'TRAVIS_XCODE_VERSION', xcode_version.shellescape, echo: false if xcode_version?
           set 'TRAVIS_XCODE_SCHEME', config[:xcode_scheme].to_s.shellescape, echo: false
           set 'TRAVIS_XCODE_PROJECT', config[:xcode_project].to_s.shellescape, echo: false
           set 'TRAVIS_XCODE_WORKSPACE', config[:xcode_workspace].to_s.shellescape, echo: false
@@ -38,6 +39,18 @@ module Travis
 
           cmd "echo '#!/bin/bash\n# no-op' > /usr/local/bin/actool", echo: false
           cmd "chmod +x /usr/local/bin/actool", echo: false
+
+          if xcode_version?
+            fold("xcode-select") do |sh|
+              xcode_installation_path = "/Applications/Xcode.app"
+              xcode_installation_path_bak = "/Applications/Xcode.app.bak"
+              xcode_version_installation_path = "/Applications/Xcode-#{xcode_version}.app"
+              sh.if "-e #{xcode_installation_path}" do |shmv|
+                shmv.cmd "sudo mv #{xcode_installation_path.shellescape} #{xcode_installation_path_bak.shellescape}"
+              end
+              sh.cmd "sudo ln -s #{xcode_version_installation_path.shellescape} #{xcode_installation_path.shellescape}"
+            end
+          end
 
           fold("start-simulator") do |sh|
             sh.echo "Starting iOS Simulator", ansi: :yellow
@@ -100,10 +113,24 @@ module Travis
 
         def xctool_args
           config[:xctool_args].to_s.tap do |xctool_args|
-            %w[project workspace scheme sdk].each do |var|
+            %w[project workspace scheme].each do |var|
               xctool_args << " -#{var} #{config[:"xcode_#{var}"].to_s.shellescape}" if config[:"xcode_#{var}"]
             end
+            xctool_args << " -#{var} #{xcode_sdk}" if config[:xcode_sdk]
           end.strip
+        end
+
+        def xcode_version?
+          config[:xcode_sdk].to_s =~ /-xcode/
+        end
+
+        def xcode_sdk
+          config[:xcode_sdk].to_s.gsub(/^(.*)-xcode.+$/, '\1')
+        end
+
+        def xcode_version
+          return 'default' unless xcode_version?
+          config[:xcode_sdk].to_s.gsub(/^.*-xcode(.+)$/, '\1')
         end
       end
     end
