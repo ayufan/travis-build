@@ -28,6 +28,7 @@ module Travis
           super
 
           set 'TRAVIS_XCODE_SDK', config[:xcode_sdk].to_s.shellescape, echo: false
+          set 'TRAVIS_XCODE_VERSION', config[:xcode_version].to_s.shellescape, echo: false
           set 'TRAVIS_XCODE_SCHEME', config[:xcode_scheme].to_s.shellescape, echo: false
           set 'TRAVIS_XCODE_PROJECT', config[:xcode_project].to_s.shellescape, echo: false
           set 'TRAVIS_XCODE_WORKSPACE', config[:xcode_workspace].to_s.shellescape, echo: false
@@ -38,6 +39,19 @@ module Travis
 
           cmd "echo '#!/bin/bash\n# no-op' > /usr/local/bin/actool", echo: false
           cmd "chmod +x /usr/local/bin/actool", echo: false
+
+          if config[:xcode_version]
+            fold("xcode-select") do |sh|
+              sh.echo "Selecting Xcode-#{config[:xcode_version]}", ansi: :yellow
+              xcode_installation_path = "/Applications/Xcode.app"
+              xcode_installation_path_bak = "/Applications/Xcode.app.bak"
+              xcode_version_installation_path = "/Applications/Xcode-#{config[:xcode_version].to_s.shellescape}.app"
+              sh.if "-e #{xcode_installation_path}" do |shmv|
+                shmv.cmd "sudo mv #{xcode_installation_path.shellescape} #{xcode_installation_path_bak.shellescape}"
+              end
+              sh.cmd "sudo ln -s #{xcode_version_installation_path.shellescape} #{xcode_installation_path.shellescape}"
+            end
+          end
         end
 
         def install

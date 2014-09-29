@@ -24,6 +24,11 @@ describe Travis::Build::Script::ObjectiveC do
     is_expected.to set 'TRAVIS_XCODE_SDK', 'iphonesimulator7.0'
   end
 
+  it 'sets TRAVIS_XCODE_VERSION' do
+    data['config']['xcode_sdk'] = '6.0'
+    is_expected.to set 'TRAVIS_XCODE_VERSION', '6.0'
+  end
+
   it 'sets TRAVIS_XCODE_SCHEME' do
     data['config']['xcode_scheme'] = 'MyTests'
     is_expected.to set 'TRAVIS_XCODE_SCHEME', 'MyTests'
