@@ -46,10 +46,12 @@ module Travis
               xcode_installation_path = "/Applications/Xcode.app"
               xcode_installation_path_bak = "/Applications/Xcode.app.bak"
               xcode_version_installation_path = "/Applications/Xcode-#{config[:xcode_version].to_s.shellescape}.app"
-              sh.if "-e #{xcode_installation_path}" do |shmv|
-                shmv.cmd "sudo mv #{xcode_installation_path.shellescape} #{xcode_installation_path_bak.shellescape}"
+              sh.if "-d #{xcode_version_installation_path}" do |sh2|
+                sh2.if "-d #{xcode_installation_path}" do |sh3|
+                  sh3.cmd "sudo mv #{xcode_installation_path.shellescape} #{xcode_installation_path_bak.shellescape}"
+                end
+                sh2.cmd "sudo ln -s #{xcode_version_installation_path.shellescape} #{xcode_installation_path.shellescape}"
               end
-              sh.cmd "sudo ln -s #{xcode_version_installation_path.shellescape} #{xcode_installation_path.shellescape}"
             end
           end
         end
